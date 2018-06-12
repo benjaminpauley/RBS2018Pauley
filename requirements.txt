@@ -4,3 +4,4 @@ lxml
 requests
 numpy
 matplotlib
+pillow
