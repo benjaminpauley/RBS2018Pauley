@@ -1,0 +1,26 @@
+#Jython for figuring pages per sheet for various formats
+import re
+if re.findall('^1/2',value) :
+  return 1
+
+if re.findall('^2|folio',value) :
+  return 4
+
+if re.findall('^4|quarto',value)  :
+  return 8
+
+if re.findall('^8|oct',value) :
+  return 16
+
+if re.findall('^12|duod',value) :
+  return 24
+
+if re.findall('^16',value) :
+  return 32
+  
+
+#GREL for dividing pages by format to arrive at number of sheets  
+abs(cells['Pages'].value) / abs(cells['Pages_per_sheet'].value)
+
+#GREL for figuring out whether author was dead at time of publication, and if not, how old
+if(cells['Date'].value > cells['Author_dates 2'].value,'Dead',cells['Date'].value - value)
