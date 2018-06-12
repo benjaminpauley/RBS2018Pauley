@@ -4,3 +4,13 @@
 
 # Remove previous ipynb_checkpoints
    git rm -r .ipynb_checkpoints/
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
