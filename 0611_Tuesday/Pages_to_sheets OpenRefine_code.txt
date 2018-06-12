@@ -20,7 +20,4 @@ if re.findall('^16',value) :
   
 
 #GREL for dividing pages by format to arrive at number of sheets  
-abs(cells['Pages'].value) / abs(cells['Pages_per_sheet'].value)
-
-#GREL for figuring out whether author was dead at time of publication, and if not, how old
-if(cells['Date'].value > cells['Author_dates 2'].value,'Dead',cells['Date'].value - value)
+abs(cells['num_pages'].value) / abs(cells['pages_per_sheet'].value)
