@@ -1,7 +1,0 @@
-pymarc
-bs4
-lxml
-requests
-numpy
-matplotlib
-pillow
