@@ -2,6 +2,7 @@
 
 # Code to be used in transforming ESTC pagination statements in Open Refine. (Use Jython.)
 
+# Compile regular expressions for various cases
 import re
 roman = re.compile('[xvi]')
 plates = re.compile('\d+\splates')
@@ -16,54 +17,109 @@ numeral_map = zip(
     ('M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I')
 )
 
+# Create a function for translating roman numerals to integers, upon receipt of argument n
 def roman_to_int(n):
+    # Convert letters to all upper-case
     n = unicode(n).upper()
 
+	# Start building up the integer, beginning at zero
     i = result = 0
+    
+    # Frankly, I'm a little confused by this terse syntax, but the thrust of it is that we're
+    # adding to the value of the integer, which started at zero
     for integer, numeral in numeral_map:
         while n[i:i + len(numeral)] == numeral:
             result += integer
             i += len(numeral)
+    
+    # The function returns the integer that we arrived at
     return str(result)
 
+# Check to see if there's a roman numeral, and if so, pass it to the roman_to_int function
+# to get back an integer
 if roman.findall(value) :
   value = re.sub('\\b([mcldxvi]+)[^][\.,e-]',lambda x: roman_to_int(x.group()),value)
+
 else :
   value = value
   
-
+# Deal with strings of digits. Create a list of all instances of groups of one or more digits,
+# transform those strings into integers, then add the numbers together. (Note: If there
+# was a roman numeral, it would already have been turned into an integer by now, and will
+# be included in our total.)
 dumbNums = [int(s) for s in re.findall(r'\d+',value)]
 dumbTotal = sum(dumbNums)
 total = dumbTotal
 
+# Check to see if there are plates (using regex compiled above)
 if plates.findall(value) :
+  # Get the part of the value that has one or more digits followed by a white space and the
+  # word "plate" (or, possibly, "plates").
   plateCount = re.findall('\d+\splates?',value)
+  
+  # Get the string of digits from that segment and turn it into an integer
   plateNum = int(re.findall('\d+',plateCount[0])[0])
+  
+  # Subtract the number of plates from the running number of pages 
   total = total - plateNum
 
+# Check to see if there are any ranges of pages given, using the regex from above. We
+# have to deal with these, because our page count would be wildly inflated if our script
+# treated, say "1-10" as the numbers 1 and 10, to be added together back at the 
+# dumbNums stage: we'd think it was 11, rather than 10. (Keep in mind that the number of 
+# pages in a range of pages is the second number minus the first number **plus one**.) 
 if range.findall(value) :
+  # Create a list of all page ranges
   ranges = re.findall('\\d+-\\d+',value)
+  
+  # Start a count of pages in ranges at zero (we'll build up)
   pagesInRanges = 0
+  
+  # Create an empty list of numbers to remove from our count
   removePages = []
+  
+  # For each of the page ranges we found...
   for range in ranges :
+    # Look for strings of one or more digits
     pageNums = re.findall('\d+',range)
+    
+    # Add the strings of digits we found to our removePages list
     removePages.extend(pageNums)
+    
+    # Figure out how many pages are actually in this range by subtracting the first number
+    # from the second and adding one
     pages = int(pageNums[1]) - int(pageNums[0]) + 1
+    
+    # Increase our count of pages in ranges by the number we just got. This will repeat
+    # as necessary
     pagesInRanges += pages
+  
+  # Get a list of all those page numbers that were spuriously inflating our count and turn
+  # them into integers, then add them together
   removePagesInts = [int(i) for i in removePages]
   pagesToRemove = sum(removePagesInts)
+  
+  # Adjust our total by removing the effects of the spurious page numbers and adding the
+  # actual number of pages in the page ranges
   total = dumbTotal - pagesToRemove + pagesInRanges
 
+# Check for instances of editorial corrections in the pagination statements (signaled by
+# "i.e."), using the regex from above.
 if ie.findall(value) :
   caveat = re.findall('\d+\\[\\i\\.?e\\.?\d+',value)
   for instance in caveat :
+    # Find all the strings of digits
     pageNums = re.findall('\d+',instance)
+    # Turn the first (i.e., erroneous) page number into an integer
     subtract = int(pageNums[0])
+  # Subtract that erroneous number from our total
   total = total - subtract
 
+# I don't remember what this does. Sorry.
 if pt.findall(value) :
   total = int(re.findall('\d+',re.findall('\d+p\\.',value)[0])[0])
 
+# Catch any numbers that are just telling us the number of volumes, and subtract those.
 if vol.findall(value) :
   vols = int(re.findall('\d+',re.findall('v\.\d+',value)[0])[0])
   total = total - vols
